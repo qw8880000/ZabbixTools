@@ -13,6 +13,54 @@ def open_pyzabbix_debug():
     log.addHandler(stream)
     log.setLevel(logging.DEBUG)
 
+def get_aplication_name(applications):
+    name = u''
+    for app in applications:
+        name += u'{} '.format(app['name'])
+
+    return name
+
+def get_monitor_item_infos(hosts):
+    lines = []
+
+    for host in hosts:
+        # 过滤掉状态为禁用的主机
+        if host['status'] != '0':
+            continue
+
+        logger.info('hostip=%s, hostname=%s, hostid=%s', host['host'], host['name'], host['hostid'])
+        next_host_flag = 1 
+
+        # 根据hostid查找监控项
+        for item in zapi.item.get(hostids=host['hostid']):
+            # 过滤掉从template继承来的监控项
+            if item['templateid'] != '0':
+                continue
+
+            application_name = get_aplication_name(zapi.application.get(itemids=item['itemid']))
+
+            logger.info('\t%s %s %s', item['name'], item['key_'], application_name)
+
+
+            item_info = {'host': '', 'hostname': '', 'itemname': '', 'itemkey': '', 'application': ''}
+
+            if next_host_flag == 1:
+                item_info['host'] = host['host']
+                item_info['hostname'] = host['name']
+                next_host_flag = 0
+            else:
+                item_info['host'] = ''
+                item_info['hostname'] = ''
+
+            item_info['itemname'] = item['name']
+            item_info['itemkey'] = item['key_']
+            item_info['application'] = application_name
+
+            lines.push(item_info)
+
+    else:
+        return lines
+
 
 if __name__ == "__main__":
 
@@ -41,50 +89,30 @@ if __name__ == "__main__":
         # 根据groupid查找主机
         hosts = zapi.host.get(groupids=hostgroup['groupid'])
 
-        for host in hosts:
-            # 过滤掉状态为禁用的主机
-            if host['status'] != '0':
-                continue
-
-            logger.info('hostip=%s, hostname=%s, hostid=%s', host['host'], host['name'], host['hostid'])
-            next_host_flag = 1 
-
-
-            # 根据hostid查找监控项
-            for item in zapi.item.get(hostids=host['hostid']):
-                # 过滤掉从template继承来的监控项
-                if item['templateid'] != '0':
-                    continue
-
-                application_name = u''
-                for app in zapi.application.get(itemids=item['itemid']):
-                    application_name += u'{},'.format(app['name'])
-
-                logger.info('\t%s %s %s', item['name'], item['key_'], application_name)
-
-                if next_host_flag == 1:
-                    sheet.write(row, 0, host['host'])
-                    sheet.write(row, 1, host['name'])
-                    next_host_flag = 0
-                else:
-                    sheet.write(row, 0, '')
-                    sheet.write(row, 1, '')
-
-                sheet.write(row, 2, item['name'])
-                sheet.write(row, 3, application_name)
-                sheet.write(row, 4, item['key_'])
-                row += 1
+        lines = get_monitor_item_infos(hosts)
+        for line in lines:
+            sheet.write(row, 0, line['host'])
+            sheet.write(row, 1, line['hostname'])
+            sheet.write(row, 2, line['itemname'])
+            sheet.write(row, 3, line['application'])
+            sheet.write(row, 4, line['itemkey'])
+            row += 1
 
 
+    #
     # 公共跳转机
-    common_hosts = ['198.25.101.98', '198.25.100.40']
-    for host_ip in common_hosts:
-        # 根据名称模糊查找监控项
-        items = zapi.item.get(host=host_ip,
-                search={'name': [software_name]})
+    # ['198.25.101.98', '198.25.100.40']
+    common_hosts = [zapi.host.get(host='198.25.101.98'), zapi.host.get(host='198.25.100.40')]
 
-        for item in items:
-            logger.info('%s', item['name'])
+    lines = get_monitor_item_infos(common_hosts)
+    for line in lines:
+        sheet.write(row, 0, line['host'])
+        sheet.write(row, 1, line['hostname'])
+        sheet.write(row, 2, line['itemname'])
+        sheet.write(row, 3, line['application'])
+        sheet.write(row, 4, line['itemkey'])
+        row += 1
 
-
+    #
+    # End
     workbook.save('./zabbix.xlsx')
