@@ -50,9 +50,9 @@ if __name__ == "__main__":
                 sheet.write(row, 1, host['name'])
 
                 # 根据hostid查找监控项
-                monitor_items = zapi.item.get(hostids=host['hostid'])
+                items = zapi.item.get(hostids=host['hostid'])
 
-                for index_item,item in enumerate(monitor_items):
+                for index_item,item in enumerate(items):
                     if item['templateid'] == '0':   # 非template监控项
                         application_name = u''
                         for app in zapi.application.get(itemids=item['itemid']):
@@ -61,10 +61,20 @@ if __name__ == "__main__":
                         logger.info('\t%s %s %s', item['name'], item['key_'], application_name)
 
                         sheet.write(row, 2, item['name'])
-                        sheet.write(row, 3, '{0},  {1}'.format(application_name, item['key_']))
+                        sheet.write(row, 3, u'{0},  {1}'.format(application_name, item['key_']))
                         row += 1
 
                 row += 1
+
+    # 公共跳转机
+    common_hosts = ['198.25.101.98', '198.25.100.40']
+    for host_ip in common_hosts:
+        # 根据名称模糊查找监控项
+        items = zapi.item.get(host=host_ip,
+                search={'name': [software_name]})
+
+        for item in items:
+            logger.info('%s', item['name'])
 
 
     workbook.save('./zabbix.xlsx')
