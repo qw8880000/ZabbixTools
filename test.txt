@@ -1,2 +1,0 @@
-hostip=198.25.100.11, hostname=ESB-EMS-198.25.100.11, hostid=10254
-	check_ps_multi check_ps_multi[hawkagent_ESB_PROD_1,17475,tibemsd1.conf] , 进程监控, ESB进程监控

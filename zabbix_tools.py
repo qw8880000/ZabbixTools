@@ -30,8 +30,6 @@ if __name__ == "__main__":
     workbook = xlwt.Workbook()
     sheet = workbook.add_sheet(software_name)
 
-
-
     #
     # about zabbix
     zapi = ZabbixAPI('http://198.25.100.36:8181/')
@@ -39,32 +37,44 @@ if __name__ == "__main__":
 
     row = 0
     # 模糊查找名称为 search_name 的主机组
-    for index_hostgroup,hostgroup in enumerate(zapi.hostgroup.get(search={'name': [software_name]})):
+    for hostgroup in zapi.hostgroup.get(search={'name': [software_name]}):
         # 根据groupid查找主机
         hosts = zapi.host.get(groupids=hostgroup['groupid'])
 
-        for index_host,host in enumerate(hosts):
-            if host['status'] == '0' and host['host'] != '198.25.100.32':   # 状态为启动的主机
-                logger.info('hostip=%s, hostname=%s, hostid=%s', host['host'], host['name'], host['hostid'])
-                sheet.write(row, 0, host['host'])
-                sheet.write(row, 1, host['name'])
+        for host in hosts:
+            # 过滤掉状态为禁用的主机
+            if host['status'] != '0':
+                continue
 
-                # 根据hostid查找监控项
-                items = zapi.item.get(hostids=host['hostid'])
+            logger.info('hostip=%s, hostname=%s, hostid=%s', host['host'], host['name'], host['hostid'])
+            next_host_flag = 1 
 
-                for index_item,item in enumerate(items):
-                    if item['templateid'] == '0':   # 非template监控项
-                        application_name = u''
-                        for app in zapi.application.get(itemids=item['itemid']):
-                            application_name += u'{},'.format(app['name'])
 
-                        logger.info('\t%s %s %s', item['name'], item['key_'], application_name)
+            # 根据hostid查找监控项
+            for item in zapi.item.get(hostids=host['hostid']):
+                # 过滤掉从template继承来的监控项
+                if item['templateid'] != '0':
+                    continue
 
-                        sheet.write(row, 2, item['name'])
-                        sheet.write(row, 3, u'{0},  {1}'.format(application_name, item['key_']))
-                        row += 1
+                application_name = u''
+                for app in zapi.application.get(itemids=item['itemid']):
+                    application_name += u'{},'.format(app['name'])
 
+                logger.info('\t%s %s %s', item['name'], item['key_'], application_name)
+
+                if next_host_flag == 1:
+                    sheet.write(row, 0, host['host'])
+                    sheet.write(row, 1, host['name'])
+                    next_host_flag = 0
+                else:
+                    sheet.write(row, 0, '')
+                    sheet.write(row, 1, '')
+
+                sheet.write(row, 2, item['name'])
+                sheet.write(row, 3, application_name)
+                sheet.write(row, 4, item['key_'])
                 row += 1
+
 
     # 公共跳转机
     common_hosts = ['198.25.101.98', '198.25.100.40']
