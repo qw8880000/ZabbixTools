@@ -38,10 +38,19 @@ def usergroups_get(group_names):
     else:
         return usergroups
 
-def user_create(alias, name, usrgrps):
+def usertype_get(usertype):
+    if usertype == 'super admin':
+        return 3
+    elif usertype == 'admin':
+        return 2
+    else:
+        return 1
+
+def user_create(alias, name, usrgrps, type):
     return zapi.user.create(alias=alias,
             name=name,
             usrgrps=usrgrps,
+            type=type,
             passwd='123456',
             lang='zh_CN')
 
@@ -63,8 +72,10 @@ if __name__ == "__main__":
             alias = sheet.cell_value(rindex, 0)
             name = sheet.cell_value(rindex, 1)
             usrgrps = usergroups_get(sheet.cell_value(rindex, 2))
+            type = usertype_get(sheet.cell_value(rindex, 3))
 
-            user_create(alias=alias, name=name, usrgrps=usrgrps)
+            if len(zapi.user.get(filter={'alias': alias})) == 0:
+                user_create(alias=alias, name=name, usrgrps=usrgrps, type=type)
 
     except ZabbixAPIException as e:
         logger.error(e)

@@ -29,5 +29,5 @@ if __name__ == "__main__":
     zapi.login('Admin', 'zabbix')
 
     open_pyzabbix_debug()
-    zapi.host.get(filter={'host': '198.25.101.98'})
+    zapi.user.get(filter={'alias': 'guest'})
 
