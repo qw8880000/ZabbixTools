@@ -9,7 +9,7 @@ from pyzabbix import ZabbixAPI, ZabbixAPIException
 # logger configuration
 # logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%Y-%m-%d %I:%M:%S', level=logging.WARNING)
 stream = logging.StreamHandler(sys.stdout)
-stream.setLevel(logging.DEBUG)
+stream.setFormatter(logging.Formatter('%(asctime)s-%(levelname)s: %(message)s', datefmt='%Y-%m-%d %I:%M:%S'))
 logger = logging.getLogger(__name__)
 logger.addHandler(stream)
 logger.setLevel(logging.DEBUG)
@@ -18,7 +18,6 @@ def open_pyzabbix_debug():
     #
     # configure the logger level of pyzabbix 
     stream = logging.StreamHandler(sys.stdout)
-    stream.setLevel(logging.DEBUG)
     log = logging.getLogger('pyzabbix')
     log.addHandler(stream)
     log.setLevel(logging.DEBUG)
@@ -76,6 +75,9 @@ if __name__ == "__main__":
 
             if len(zapi.user.get(filter={'alias': alias})) == 0:
                 user_create(alias=alias, name=name, usrgrps=usrgrps, type=type)
+                logger.info('====> %s create success', alias)
+            else:
+                logger.info('xxxx %s is already exist', alias)
 
     except ZabbixAPIException as e:
         logger.error(e)
