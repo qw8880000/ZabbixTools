@@ -23,6 +23,15 @@ def open_pyzabbix_debug():
     log.addHandler(stream)
     log.setLevel(logging.DEBUG)
 
+def xlrd_cell_value_getstr(sheet, rowx, colx):
+    """获取sheet某单元格的值，如果是数字类型，则转换成字符串类型
+    """
+    cell_value = sheet.cell_value(rowx, colx)
+    if type(cell_value).__name__ == 'float':
+        return str(int(cell_value))
+    else:
+        return cell_value
+
 def usergroups_get(group_names):
     """ 获取usergroup
     Args:
@@ -111,13 +120,13 @@ if __name__ == "__main__":
 
     try:
         for rindex in range(1, sheet.nrows):
-            alias = sheet.cell_value(rindex, 0)
-            name = sheet.cell_value(rindex, 1)
-            usrgrps = usergroups_get(sheet.cell_value(rindex, 2))
-            type = usertype_get(sheet.cell_value(rindex, 3))
-            wechat = sheet.cell_value(rindex, 4)
-            phone = sheet.cell_value(rindex, 5)
-            email = sheet.cell_value(rindex, 6)
+            alias = xlrd_cell_value_getstr(sheet, rindex, 0)
+            name = xlrd_cell_value_getstr(sheet, rindex, 1)
+            usrgrps = usergroups_get(xlrd_cell_value_getstr(sheet, rindex, 2))
+            usertype = usertype_get(xlrd_cell_value_getstr(sheet, rindex, 3))
+            wechat = xlrd_cell_value_getstr(sheet, rindex, 4)
+            phone = xlrd_cell_value_getstr(sheet, rindex, 5)
+            email = xlrd_cell_value_getstr(sheet, rindex, 6)
 
             user_medias = user_medias_get(wechat, phone, email)
 
@@ -128,7 +137,7 @@ if __name__ == "__main__":
                         alias=alias,
                         name=name,
                         usrgrps=usrgrps,
-                        type=type,
+                        type=usertype,
                         user_medias=user_medias,
                         passwd='123456',
                         lang='zh_CN'
