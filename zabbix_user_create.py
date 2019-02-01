@@ -46,11 +46,33 @@ def usertype_get(usertype):
     else:
         return 1
 
-def user_create(alias, name, usrgrps, type):
+def user_medias_get(wechat, phone, email):
+    user_medias = []
+
+    if wechat.strip() != '':
+        user_medias.append({
+            'mediatypeid': '1',
+            'sendto': wechat
+            })
+    if phone.strip() != '':
+        user_medias.append({
+            'mediatypeid': '2',
+            'sendto': phone
+            })
+    if email.strip() != '':
+        user_medias.append({
+            'mediatypeid': '3',
+            'sendto': email
+            })
+
+    return user_medias
+
+def user_create(alias, name, usrgrps, type, user_medias):
     return zapi.user.create(alias=alias,
             name=name,
             usrgrps=usrgrps,
             type=type,
+            user_medias=user_medias,
             passwd='123456',
             lang='zh_CN')
 
@@ -93,9 +115,24 @@ if __name__ == "__main__":
             name = sheet.cell_value(rindex, 1)
             usrgrps = usergroups_get(sheet.cell_value(rindex, 2))
             type = usertype_get(sheet.cell_value(rindex, 3))
+            wechat = sheet.cell_value(rindex, 4)
+            phone = sheet.cell_value(rindex, 5)
+            email = sheet.cell_value(rindex, 6)
 
-            if len(zapi.user.get(filter={'alias': alias})) == 0:
-                user_create(alias=alias, name=name, usrgrps=usrgrps, type=type)
+            user_medias = user_medias_get(wechat, phone, email)
+
+            # 判断用户是否已经存在
+            users = zapi.user.get(filter={'alias': alias})
+            if len(users) == 0:
+                zapi.user.create(
+                        alias=alias,
+                        name=name,
+                        usrgrps=usrgrps,
+                        type=type,
+                        user_medias=user_medias,
+                        passwd='123456',
+                        lang='zh_CN'
+                        )
                 logger.info('====> %s create success', alias)
             else:
                 logger.info('xxxx %s is already exist', alias)
