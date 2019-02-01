@@ -2,6 +2,7 @@
 import sys
 import os
 import logging
+import argparse
 import xlrd
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 
@@ -55,16 +56,36 @@ def user_create(alias, name, usrgrps, type):
 
 if __name__ == "__main__":
     #
-    # xlrd
-    workbook = xlrd.open_workbook('./zabbix_user_create.xlsx')
-    sheet = workbook.sheet_by_name('user')
+    # 参数解析
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', dest='input', help='The input file.', metavar='INPUT_FILE', required=True)
+    parser.add_argument('-s', '--server', dest='server', help='The zabbix server.', metavar='ZABBIX_SERVER', required=True)
+    parser.add_argument('-u', '--user', dest='user', help='The zabbix user.', metavar='USER', required=True)
+    parser.add_argument('-p', '--password', dest='password', help='The zabbix password.', metavar='PASSWORD', required=True)
+    args = parser.parse_args()
 
-    #  open_pyzabbix_debug()
+    input_file = args.input
+    zabbix_server = args.server
+    zabbix_user = args.user
+    zabbix_password = args.password
+
+    if not os.path.exists(input_file):
+        logger.warning('The input file does not exist: %s', input_file)
+        sys.exit(1)
+
+    if not os.path.isfile(input_file):
+        logger.warning('The input file is not a file: %s', input_file)
+        sys.exit(1)
+
+    #
+    # xlrd
+    workbook = xlrd.open_workbook(input_file)
+    sheet = workbook.sheet_by_name('user')
 
     #
     # about zabbix
-    zapi = ZabbixAPI('http://192.25.107.14:8000/')
-    zapi.login('Admin', 'zabbix')
+    zapi = ZabbixAPI(zabbix_server)
+    zapi.login(zabbix_user, zabbix_password)
 
     try:
         for rindex in range(1, sheet.nrows):
