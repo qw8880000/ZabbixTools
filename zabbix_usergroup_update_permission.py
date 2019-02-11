@@ -43,18 +43,25 @@ if __name__ == "__main__":
     zapi = ZabbixAPI(zabbix_server)
     zapi.login(zabbix_user, zabbix_password)
 
-    lastname = ''
-    usergroup_info_array = []
+    usergroup_info = { 'name': '', 'rights': [] }
 
     try:
         for rindex in range(1, sheet.nrows):
-            usergroup_info = { 'name': '', 'rights': [] }
             # excel 表格中，一个name 可以对应多个主机群组的权限设置
             name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
             if name != '':
-                lastname = name
-            else:
-                name = lastname
+                usergroup_info['name'] = name
+
+            hostgroup_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
+            hostgroups = zapi.hostgroup.get(filter={'name': hostgroup_name})
+            if len(hostgroups) == 0:
+                logger.info('==> does not exist, hostgroup name: %s', hostgroup_name)
+                continue
+
+            permission = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
+
+            right = { 'permission': permission, 'id': hostgroups[0]['groupid'] }
+            usergroup_info['rights'].append(right)
 
             # 获取usergroup信息
             usergroups = zapi.usergroup.get(filter={'name': name})
@@ -65,18 +72,8 @@ if __name__ == "__main__":
             usergroup_id = usergroups[0]['usrgrpid']
 
             # 更新 usergroup 的权限信息
-            hostgroup_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
-            hostgroups = zapi.hostgroup.get(filter={'name': hostgroup_name})
-            if len(hostgroups) == 0:
-                logger.info('==> does not exist, hostgroup name: %s', hostgroup_name)
-                continue
-
-            permission = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
-
-            rights = { 'permission': permission, 'id': hostgroups[0]['groupid'] }
-
-            # ret = zapi.usergroup.update(usrgrpid=usergroup_id, rights=rights)
-            # logger.info('====> update success, usergroup name: %s, hostgroup_name: %s', name, hostgroup_name)
+            ret = zapi.usergroup.update(usrgrpid=usergroup_id, rights=usergroup_info['rights'])
+            logger.info('====> update success, usergroup name: %s, hostgroup_name: %s', name, hostgroup_name)
 
     except ZabbixAPIException as e:
         logger.error(e)
