@@ -47,7 +47,17 @@ if __name__ == "__main__":
 
     try:
         for rindex in range(1, sheet.nrows):
+            #
             # excel 表格中，一个name 可以对应多个主机群组的权限设置
+            # 以下代码开始构造 usergroup_info，例如：
+            # usergroup_info = {
+            #         'name': 'usergroup-1',
+            #         'rights': [
+            #             {'permission': '2', 'id': '15'},
+            #             {'permission': '2', 'id': '20'},
+            #             {'permission': '3', 'id': '10'}
+            #             ]
+            #         }
             name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
             if name != '':
                 usergroup_info['name'] = name
@@ -63,7 +73,11 @@ if __name__ == "__main__":
             right = { 'permission': permission, 'id': hostgroups[0]['groupid'] }
             usergroup_info['rights'].append(right)
 
-            # 获取usergroup信息
+            if (myutils.xlrd_cell_value_getstr(sheet, rindex + 1, 0) == '') or (rindex + 1 != sheet.nrows):
+                continue
+
+            #
+            # usergroup_info 构造完成后，开始更新 usergroup
             usergroups = zapi.usergroup.get(filter={'name': name})
             if len(usergroups) == 0:
                 logger.info('==> does not exist, usergroup name: %s', name)
