@@ -30,7 +30,7 @@ def xlrd_cell_value_getstr(sheet, rowx, colx):
     if type(cell_value).__name__ == 'float':
         return str(int(cell_value))
     else:
-        return cell_value
+        return cell_value.strip()
 
 def usergroups_get(group_names):
     """ 获取usergroup

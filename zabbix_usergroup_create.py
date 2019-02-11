@@ -30,7 +30,7 @@ def xlrd_cell_value_getstr(sheet, rowx, colx):
     if type(cell_value).__name__ == 'float':
         return str(int(cell_value))
     else:
-        return cell_value
+        return cell_value.strip()
 
 if __name__ == "__main__":
     #
@@ -69,15 +69,19 @@ if __name__ == "__main__":
         for rindex in range(1, sheet.nrows):
             name = xlrd_cell_value_getstr(sheet, rindex, 0)
 
-            # 判断用户是否已经存在
+            if name == '':
+                continue
+
+            # 创建用户组
+            usergroup_id = None
             usergroups = zapi.usergroup.get(filter={'name': name})
             if len(usergroups) == 0:
-                zapi.usergroup.create(
-                        name=name,
-                        )
-                logger.info('====> %s create success', name)
+                ret = zapi.usergroup.create(name=name)
+                usergroup_id = ret['usrgrpids'][0]
+                logger.info('====> create success, usergroup name: %s, usergroup_id: %s', name, usergroup_id)
             else:
-                logger.info('xxxx %s is already exist', name)
+                usergroup_id = usergroups[0]['usrgrpid']
+                logger.info('==> already exist, usergroup name: %s, usergroup_id: %s', name, usergroup_id)
 
     except ZabbixAPIException as e:
         logger.error(e)
