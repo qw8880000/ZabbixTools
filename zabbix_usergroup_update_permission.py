@@ -10,6 +10,19 @@ import myutils
 
 logger = myutils.init_logger()
 
+def usergroup_update(usergroup_info):
+    usergroup_name = usergroup_info['name']
+    usergroup_rights = usergroup_info['rights']
+
+    usergroups = zapi.usergroup.get(filter={'name': usergroup_name})
+    if len(usergroups) == 0:
+        logger.info('==> does not exist, usergroup name: %s', usergroup_name)
+    else:
+        usergroup_id = usergroups[0]['usrgrpid']
+        # 更新 usergroup 的权限信息
+        ret = zapi.usergroup.update(usrgrpid=usergroup_id, rights=usergroup_rights)
+        logger.info('====> update success, usergroup name: %s, rights: %s', usergroup_name, usergroup_rights)
+
 if __name__ == "__main__":
     #
     # 参数解析
@@ -70,24 +83,17 @@ if __name__ == "__main__":
 
             permission = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
 
-            right = { 'permission': permission, 'id': hostgroups[0]['groupid'] }
+            #  right = { 'permission': permission, 'id': hostgroups[0]['groupid'] }
+            right = { 'permission': 2, 'id': hostgroups[0]['groupid'] }
             usergroup_info['rights'].append(right)
 
-            if (myutils.xlrd_cell_value_getstr(sheet, rindex + 1, 0) == '') or (rindex + 1 != sheet.nrows):
+            # 如果下一行是最后一行，或者下一行的name不为空，表示usergroup_info对象构造完成
+            if (rindex + 1 < sheet.nrows) and (myutils.xlrd_cell_value_getstr(sheet, rindex + 1, 0) == ''):
                 continue
 
             #
             # usergroup_info 构造完成后，开始更新 usergroup
-            usergroups = zapi.usergroup.get(filter={'name': name})
-            if len(usergroups) == 0:
-                logger.info('==> does not exist, usergroup name: %s', name)
-                continue
-
-            usergroup_id = usergroups[0]['usrgrpid']
-
-            # 更新 usergroup 的权限信息
-            ret = zapi.usergroup.update(usrgrpid=usergroup_id, rights=usergroup_info['rights'])
-            logger.info('====> update success, usergroup name: %s, hostgroup_name: %s', name, hostgroup_name)
+            usergroup_update(usergroup_info)
 
     except ZabbixAPIException as e:
         logger.error(e)
