@@ -14,10 +14,10 @@ if __name__ == "__main__":
     #
     # 参数解析
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', dest='input', help='The input file.', metavar='INPUT_FILE', required=True)
-    parser.add_argument('-s', '--server', dest='server', help='The zabbix server.', metavar='ZABBIX_SERVER', required=True)
-    parser.add_argument('-u', '--user', dest='user', help='The zabbix user.', metavar='USER', required=True)
-    parser.add_argument('-p', '--password', dest='password', help='The zabbix password.', metavar='PASSWORD', required=True)
+    parser.add_argument("-i", "--input", dest="input", help="The input file.", metavar="INPUT_FILE", required=True)
+    parser.add_argument("-s", "--server", dest="server", help="The zabbix server.", metavar="ZABBIX_SERVER", required=True)
+    parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
+    parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
     args = parser.parse_args()
 
     input_file = args.input
@@ -26,11 +26,11 @@ if __name__ == "__main__":
     zabbix_password = args.password
 
     if not os.path.exists(input_file):
-        logger.warning('The input file does not exist: %s', input_file)
+        logger.warning("The input file does not exist: %s", input_file)
         sys.exit(1)
 
     if not os.path.isfile(input_file):
-        logger.warning('The input file is not a file: %s', input_file)
+        logger.warning("The input file is not a file: %s", input_file)
         sys.exit(1)
 
     #
@@ -47,19 +47,19 @@ if __name__ == "__main__":
         for rindex in range(1, sheet.nrows):
             name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
 
-            if name == '':
+            if name == "":
                 continue
 
             # 创建用户组
             usergroup_id = None
-            usergroups = zapi.usergroup.get(filter={'name': name})
+            usergroups = zapi.usergroup.get(filter={"name": name})
             if len(usergroups) == 0:
                 ret = zapi.usergroup.create(name=name)
-                usergroup_id = ret['usrgrpids'][0]
-                logger.info('====> create success, usergroup name: %s, usergroup_id: %s', name, usergroup_id)
+                usergroup_id = ret["usrgrpids"][0]
+                logger.info("====> create success, usergroup name: %s, usergroup_id: %s", name, usergroup_id)
             else:
-                usergroup_id = usergroups[0]['usrgrpid']
-                logger.info('==> already exist, usergroup name: %s, usergroup_id: %s', name, usergroup_id)
+                usergroup_id = usergroups[0]["usrgrpid"]
+                logger.info("==> already exist, usergroup name: %s, usergroup_id: %s", name, usergroup_id)
 
     except ZabbixAPIException as e:
         logger.error(e)

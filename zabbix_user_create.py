@@ -19,16 +19,16 @@ def usergroups_get(group_names):
     """
     usergroups = []
 
-    for group_name in group_names.split(','):
-        for group in zapi.usergroup.get(output='extend', search={'name': group_name}):
-            usergroups.append({'usrgrpid': group['usrgrpid']})
+    for group_name in group_names.split(","):
+        for group in zapi.usergroup.get(output="extend", search={"name": group_name}):
+            usergroups.append({"usrgrpid": group["usrgrpid"]})
     else:
         return usergroups
 
 def usertype_get(usertype):
-    if usertype == 'super admin':
+    if usertype == "super admin":
         return 3
-    elif usertype == 'admin':
+    elif usertype == "admin":
         return 2
     else:
         return 1
@@ -36,20 +36,20 @@ def usertype_get(usertype):
 def user_medias_get(wechat, phone, email):
     user_medias = []
 
-    if wechat.strip() != '':
+    if wechat.strip() != "":
         user_medias.append({
-            'mediatypeid': '1',
-            'sendto': wechat
+            "mediatypeid": "1",
+            "sendto": wechat
             })
-    if phone.strip() != '':
+    if phone.strip() != "":
         user_medias.append({
-            'mediatypeid': '2',
-            'sendto': phone
+            "mediatypeid": "2",
+            "sendto": phone
             })
-    if email.strip() != '':
+    if email.strip() != "":
         user_medias.append({
-            'mediatypeid': '3',
-            'sendto': email
+            "mediatypeid": "3",
+            "sendto": email
             })
 
     return user_medias
@@ -60,17 +60,17 @@ def user_create(alias, name, usrgrps, type, user_medias):
             usrgrps=usrgrps,
             type=type,
             user_medias=user_medias,
-            passwd='123456',
-            lang='zh_CN')
+            passwd="123456",
+            lang="zh_CN")
 
 if __name__ == "__main__":
     #
     # 参数解析
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', dest='input', help='The input file.', metavar='INPUT_FILE', required=True)
-    parser.add_argument('-s', '--server', dest='server', help='The zabbix server.', metavar='ZABBIX_SERVER', required=True)
-    parser.add_argument('-u', '--user', dest='user', help='The zabbix user.', metavar='USER', required=True)
-    parser.add_argument('-p', '--password', dest='password', help='The zabbix password.', metavar='PASSWORD', required=True)
+    parser.add_argument("-i", "--input", dest="input", help="The input file.", metavar="INPUT_FILE", required=True)
+    parser.add_argument("-s", "--server", dest="server", help="The zabbix server.", metavar="ZABBIX_SERVER", required=True)
+    parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
+    parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
     args = parser.parse_args()
 
     input_file = args.input
@@ -79,17 +79,17 @@ if __name__ == "__main__":
     zabbix_password = args.password
 
     if not os.path.exists(input_file):
-        logger.warning('The input file does not exist: %s', input_file)
+        logger.warning("The input file does not exist: %s", input_file)
         sys.exit(1)
 
     if not os.path.isfile(input_file):
-        logger.warning('The input file is not a file: %s', input_file)
+        logger.warning("The input file is not a file: %s", input_file)
         sys.exit(1)
 
     #
     # xlrd
     workbook = xlrd.open_workbook(input_file)
-    sheet = workbook.sheet_by_name('user')
+    sheet = workbook.sheet_by_name("user")
 
     #
     # about zabbix
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             user_medias = user_medias_get(wechat, phone, email)
 
             # 判断用户是否已经存在
-            users = zapi.user.get(filter={'alias': alias})
+            users = zapi.user.get(filter={"alias": alias})
             if len(users) == 0:
                 zapi.user.create(
                         alias=alias,
@@ -117,12 +117,12 @@ if __name__ == "__main__":
                         usrgrps=usrgrps,
                         type=usertype,
                         user_medias=user_medias,
-                        passwd='123456',
-                        lang='zh_CN'
+                        passwd="123456",
+                        lang="zh_CN"
                         )
-                logger.info('====> %s create success', alias)
+                logger.info("====> %s create success", alias)
             else:
-                logger.info('xxxx %s is already exist', alias)
+                logger.info("xxxx %s is already exist", alias)
 
     except ZabbixAPIException as e:
         logger.error(e)

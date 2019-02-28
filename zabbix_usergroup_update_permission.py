@@ -11,26 +11,26 @@ import myutils
 logger = myutils.init_logger()
 
 def usergroup_update(usergroup_info):
-    usergroup_name = usergroup_info['name']
-    usergroup_rights = usergroup_info['rights']
+    usergroup_name = usergroup_info["name"]
+    usergroup_rights = usergroup_info["rights"]
 
-    usergroups = zapi.usergroup.get(filter={'name': usergroup_name})
+    usergroups = zapi.usergroup.get(filter={"name": usergroup_name})
     if len(usergroups) == 0:
-        logger.info('==> does not exist, usergroup name: %s', usergroup_name)
+        logger.info("==> does not exist, usergroup name: %s", usergroup_name)
     else:
-        usergroup_id = usergroups[0]['usrgrpid']
+        usergroup_id = usergroups[0]["usrgrpid"]
         # 更新 usergroup 的权限信息
         ret = zapi.usergroup.update(usrgrpid=usergroup_id, rights=usergroup_rights)
-        logger.info('====> update success, usergroup name: %s, rights: %s', usergroup_name, usergroup_rights)
+        logger.info("====> update success, usergroup name: %s, rights: %s", usergroup_name, usergroup_rights)
 
 if __name__ == "__main__":
     #
     # 参数解析
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', dest='input', help='The input file.', metavar='INPUT_FILE', required=True)
-    parser.add_argument('-s', '--server', dest='server', help='The zabbix server.', metavar='ZABBIX_SERVER', required=True)
-    parser.add_argument('-u', '--user', dest='user', help='The zabbix user.', metavar='USER', required=True)
-    parser.add_argument('-p', '--password', dest='password', help='The zabbix password.', metavar='PASSWORD', required=True)
+    parser.add_argument("-i", "--input", dest="input", help="The input file.", metavar="INPUT_FILE", required=True)
+    parser.add_argument("-s", "--server", dest="server", help="The zabbix server.", metavar="ZABBIX_SERVER", required=True)
+    parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
+    parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
     args = parser.parse_args()
 
     input_file = args.input
@@ -39,11 +39,11 @@ if __name__ == "__main__":
     zabbix_password = args.password
 
     if not os.path.exists(input_file):
-        logger.warning('The input file does not exist: %s', input_file)
+        logger.warning("The input file does not exist: %s", input_file)
         sys.exit(1)
 
     if not os.path.isfile(input_file):
-        logger.warning('The input file is not a file: %s', input_file)
+        logger.warning("The input file is not a file: %s", input_file)
         sys.exit(1)
 
     #
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     zapi = ZabbixAPI(zabbix_server)
     zapi.login(zabbix_user, zabbix_password)
 
-    usergroup_info = { 'name': '', 'rights': [] }
+    usergroup_info = { "name": "", "rights": [] }
 
     try:
         for rindex in range(1, sheet.nrows):
@@ -64,31 +64,31 @@ if __name__ == "__main__":
             # excel 表格中，一个name 可以对应多个主机群组的权限设置
             # 以下代码开始构造 usergroup_info，例如：
             # usergroup_info = {
-            #         'name': 'usergroup-1',
-            #         'rights': [
-            #             {'permission': '2', 'id': '15'},
-            #             {'permission': '2', 'id': '20'},
-            #             {'permission': '3', 'id': '10'}
+            #         "name": "usergroup-1",
+            #         "rights": [
+            #             {"permission": "2", "id": "15"},
+            #             {"permission": "2", "id": "20"},
+            #             {"permission": "3", "id": "10"}
             #             ]
             #         }
             name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
-            if name != '':
-                usergroup_info['name'] = name
+            if name != "":
+                usergroup_info["name"] = name
 
             hostgroup_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
-            hostgroups = zapi.hostgroup.get(filter={'name': hostgroup_name})
+            hostgroups = zapi.hostgroup.get(filter={"name": hostgroup_name})
             if len(hostgroups) == 0:
-                logger.info('==> does not exist, hostgroup name: %s', hostgroup_name)
+                logger.info("==> does not exist, hostgroup name: %s", hostgroup_name)
                 continue
 
             permission = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
 
-            #  right = { 'permission': permission, 'id': hostgroups[0]['groupid'] }
-            right = { 'permission': 2, 'id': hostgroups[0]['groupid'] }
-            usergroup_info['rights'].append(right)
+            #  right = { "permission": permission, "id": hostgroups[0]["groupid"] }
+            right = { "permission": 2, "id": hostgroups[0]["groupid"] }
+            usergroup_info["rights"].append(right)
 
             # 如果下一行是最后一行，或者下一行的name不为空，表示usergroup_info对象构造完成
-            if (rindex + 1 < sheet.nrows) and (myutils.xlrd_cell_value_getstr(sheet, rindex + 1, 0) == ''):
+            if (rindex + 1 < sheet.nrows) and (myutils.xlrd_cell_value_getstr(sheet, rindex + 1, 0) == ""):
                 continue
 
             #
