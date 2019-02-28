@@ -3,6 +3,7 @@ import sys
 import os
 import logging
 import argparse
+import ast
 import json
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 
@@ -26,13 +27,10 @@ if __name__ == "__main__":
     zabbix_password = args.password
     zabbix_method = args.method
 
-    zabbix_params = "{" + ",".join(args.params) + "}"
+    params = ",".join(args.params)
+    params = unicode(params, "GBK") # 命令行参数如果有中文，转成unicode 
+    zabbix_params = ast.literal_eval("{" + params + "}") # 字符串转成对像
 
-    print zabbix_params
-    tmp = json.loads(zabbix_params)
-
-    print tmp
-    """
     #
     # about zabbix
     zapi = ZabbixAPI(zabbix_server)
@@ -44,9 +42,7 @@ if __name__ == "__main__":
                 params=zabbix_params
                 )
 
-        print ret
+        logger.info("==== response ===>\n %s", json.dumps(ret, indent=2))
     except ZabbixAPIException as e:
         logger.error(e)
         sys.exit()
-
-    """
