@@ -18,12 +18,14 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", dest="server", help="The zabbix server.", metavar="ZABBIX_SERVER", required=True)
     parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
     parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
+    parser.add_argument("--gid", dest="gid", help="The host group id.", metavar="HOST GROUP ID", required=True)
     args = parser.parse_args()
 
     input_file = args.input
     zabbix_server = args.server
     zabbix_user = args.user
     zabbix_password = args.password
+    gid = args.gid
 
     if not os.path.exists(input_file):
         logger.warning("The input file does not exist: %s", input_file)
@@ -63,11 +65,11 @@ if __name__ == "__main__":
                             "type": 1,
                             "main": 1,
                             "useip": 1,
-                            "ip": "0.0.0.0",
+                            "ip": host_ip,
                             "dns": "",
-                            "port": "0"
+                            "port": "10050"
                             },
-                        groups=[{"groupid": 16}]
+                        groups=[{"groupid": gid}]
                         )
                 host_id = ret["hostids"][0]
                 logger.info("====> create success, host name: %s, host_id: %s", host_ip, host_id)
