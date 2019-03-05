@@ -122,6 +122,15 @@ if __name__ == "__main__":
                 logger.info("====> %s create success", alias)
             else:
                 if is_update == True:
+                    userid = users[0]["userid"]
+                    zapi.user.update(
+                            userid=userid,
+                            user_medias=user_medias
+                            )
+                    zapi.user.updatemedia(
+                            users=[{"userid": userid}],
+                            medias=user_medias
+                            )
                     logger.info("----> %s update success", alias)
                 else:
                     logger.info("xxxx %s is already exist", alias)
