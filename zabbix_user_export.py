@@ -19,11 +19,22 @@ def usertype_get(usertype):
         return "guest"
 
 def get_sendto_by_mediatypeid(medias, mediatypeid):
+    """在mediatypes中查找mediatypeid对应的sendto
+    """
     for m in medias:
         if m["mediatypeid"] == mediatypeid:
             return m["sendto"]
     else:
         return ""
+
+def get_mediatypeid_by_description(mediatypes, description):
+    """在mediatypes中查找description对应的mediatypeid
+    """
+    for m in mediatypes:
+        if m["description"] == description:
+            return m["mediatypeid"]
+    else:
+        return "-1"
 
 if __name__ == "__main__":
     #
@@ -44,7 +55,7 @@ if __name__ == "__main__":
     # xlwt
     workbook = xlwt.Workbook()
     sheet = workbook.add_sheet("user")
-    header = [u"别名(alias)", u"用户名(name)", u"群组(groups)", u"用户类型(User type)", u"微信", u"手机", u"邮箱"]
+    header = [u"别名(alias)", u"用户名(name)", u"群组(groups)", u"用户类型(User type)", u"微信", u"短信", u"邮件"]
     for index,value in enumerate(header):
         sheet.write(0, index, value)
 
@@ -55,9 +66,10 @@ if __name__ == "__main__":
 
     try:
 
-        mediatype_wechat_id = zapi.mediatype.get(filter={"description": u"微信"})[0]["mediatypeid"]
-        mediatype_phone_id = zapi.mediatype.get(filter={"description": u"短信"})[0]["mediatypeid"]
-        mediatype_email_id = zapi.mediatype.get(filter={"description": u"邮件"})[0]["mediatypeid"]
+        mediatypes = zapi.mediatype.get()
+        mediatype_wechat_id = get_mediatypeid_by_description(mediatypes, u'微信')
+        mediatype_phone_id = get_mediatypeid_by_description(mediatypes, u'短信')
+        mediatype_email_id = get_mediatypeid_by_description(mediatypes, u'邮件')
 
         all_users = zapi.user.get()
         for index,user in enumerate(all_users):
@@ -72,13 +84,14 @@ if __name__ == "__main__":
             phone = get_sendto_by_mediatypeid(user_medias, mediatype_phone_id)
             email = get_sendto_by_mediatypeid(user_medias, mediatype_email_id)
 
-            sheet.write(index+1, 0, alias)
-            sheet.write(index+1, 1, name)
-            sheet.write(index+1, 2, usergroup)
-            sheet.write(index+1, 3, usertype)
-            sheet.write(index+1, 4, wechat)
-            sheet.write(index+1, 5, phone)
-            sheet.write(index+1, 6, email)
+            row = index + 1
+            sheet.write(row, 0, alias)
+            sheet.write(row, 1, name)
+            sheet.write(row, 2, usergroup)
+            sheet.write(row, 3, usertype)
+            sheet.write(row, 4, wechat)
+            sheet.write(row, 5, phone)
+            sheet.write(row, 6, email)
 
     except ZabbixAPIException as e:
         logger.error(e)

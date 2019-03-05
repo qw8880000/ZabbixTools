@@ -33,35 +33,26 @@ def usertype_get(usertype):
     else:
         return 1
 
+def get_mediatypeid_by_description(mediatypes, description):
+    """在mediatypes中查找description对应的mediatypeid
+    """
+    for m in mediatypes:
+        if m["description"] == description:
+            return m["mediatypeid"]
+    else:
+        return "-1"
+
 def user_medias_get(wechat, phone, email):
     user_medias = []
 
-    if wechat.strip() != "":
-        user_medias.append({
-            "mediatypeid": "1",
-            "sendto": wechat
-            })
-    if phone.strip() != "":
-        user_medias.append({
-            "mediatypeid": "2",
-            "sendto": phone
-            })
-    if email.strip() != "":
-        user_medias.append({
-            "mediatypeid": "3",
-            "sendto": email
-            })
+    if wechat["sendto"].strip() != "":
+        user_medias.append(wechat)
+    if phone["sendto"].strip() != "":
+        user_medias.append(phone)
+    if email["sendto"].strip() != "":
+        user_medias.append(email)
 
     return user_medias
-
-def user_create(alias, name, usrgrps, type, user_medias):
-    return zapi.user.create(alias=alias,
-            name=name,
-            usrgrps=usrgrps,
-            type=type,
-            user_medias=user_medias,
-            passwd="123456",
-            lang="zh_CN")
 
 if __name__ == "__main__":
     #
@@ -71,12 +62,14 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", dest="server", help="The zabbix server.", metavar="ZABBIX_SERVER", required=True)
     parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
     parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
+    parser.add_argument("--update", dest="update", action="store_true", help="If user exist, then update")
     args = parser.parse_args()
 
     input_file = args.input
     zabbix_server = args.server
     zabbix_user = args.user
     zabbix_password = args.password
+    is_update = args.update
 
     if not os.path.exists(input_file):
         logger.warning("The input file does not exist: %s", input_file)
@@ -97,14 +90,20 @@ if __name__ == "__main__":
     zapi.login(zabbix_user, zabbix_password)
 
     try:
+        mediatypes = zapi.mediatype.get()
+        mediatype_wechat_id = get_mediatypeid_by_description(mediatypes, u'微信')
+        mediatype_phone_id = get_mediatypeid_by_description(mediatypes, u'短信')
+        mediatype_email_id = get_mediatypeid_by_description(mediatypes, u'邮件')
+
         for rindex in range(1, sheet.nrows):
             alias = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
             name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
             usrgrps = usergroups_get(myutils.xlrd_cell_value_getstr(sheet, rindex, 2))
             usertype = usertype_get(myutils.xlrd_cell_value_getstr(sheet, rindex, 3))
-            wechat = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
-            phone = myutils.xlrd_cell_value_getstr(sheet, rindex, 5)
-            email = myutils.xlrd_cell_value_getstr(sheet, rindex, 6)
+
+            wechat = { "mediatypeid": mediatype_wechat_id, "sendto": myutils.xlrd_cell_value_getstr(sheet, rindex, 4) }
+            phone = { "mediatypeid": mediatype_phone_id, "sendto": myutils.xlrd_cell_value_getstr(sheet, rindex, 5) }
+            email = { "mediatypeid": mediatype_email_id, "sendto": myutils.xlrd_cell_value_getstr(sheet, rindex, 6) }
 
             user_medias = user_medias_get(wechat, phone, email)
 
@@ -122,7 +121,10 @@ if __name__ == "__main__":
                         )
                 logger.info("====> %s create success", alias)
             else:
-                logger.info("xxxx %s is already exist", alias)
+                if is_update == True:
+                    logger.info("----> %s update success", alias)
+                else:
+                    logger.info("xxxx %s is already exist", alias)
 
     except ZabbixAPIException as e:
         logger.error(e)
