@@ -4,6 +4,8 @@ import os
 import logging
 import argparse
 import xlrd
+import xlwt
+import socket
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 
 import myutils
@@ -11,47 +13,31 @@ import myutils
 logger = myutils.init_logger()
 
 if __name__ == "__main__":
-    #
-    # 参数解析
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', dest='input', help='The input file.', metavar='INPUT_FILE', required=True)
-    #  parser.add_argument('-s', '--server', dest='server', help='The zabbix server.', metavar='ZABBIX_SERVER', required=True)
-    #  parser.add_argument('-u', '--user', dest='user', help='The zabbix user.', metavar='USER', required=True)
-    #  parser.add_argument('-p', '--password', dest='password', help='The zabbix password.', metavar='PASSWORD', required=True)
-    args = parser.parse_args()
 
-    input_file = args.input
-    #  zabbix_server = args.server
-    #  zabbix_user = args.user
-    #  zabbix_password = args.password
+    zabbix_server = "http://198.25.100.36:8181"
+    zabbix_user = "Admin"
+    zabbix_password = "zabbix"
 
-    if not os.path.exists(input_file):
-        logger.warning('The input file does not exist: %s', input_file)
-        sys.exit(1)
+    zapi = ZabbixAPI(zabbix_server)
+    zapi.login(zabbix_user, zabbix_password)
 
-    if not os.path.isfile(input_file):
-        logger.warning('The input file is not a file: %s', input_file)
-        sys.exit(1)
-
-    #
-    # xlrd
-    workbook = xlrd.open_workbook(input_file)
-    sheet = workbook.sheet_by_index(0)
-
-    #
-    # about zabbix
-    #  zapi = ZabbixAPI(zabbix_server)
-    #  zapi.login(zabbix_user, zabbix_password)
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet("user")
 
     try:
-        for rindex in range(1, sheet.nrows):
-            col1 = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
-            col2 = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
-            col3 = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
+        hosts = zapi.host.get(filter={"status":"0"})
+        for index,host in enumerate(hosts):
+            if is_port_opened(host["host"], 10050) == True:
+                status = "open"
+            else:
+                status = "close"
 
-            logger.info('%s, %s, %s', col1, col2, col3)
-
+            sheet.write(index, 0, host["host"])
+            sheet.write(index, 1, status)
+                
     except ZabbixAPIException as e:
         logger.error(e)
         sys.exit()
+
+    workbook.save("./host_port.xlsx")
 
