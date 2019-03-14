@@ -54,8 +54,7 @@ if __name__ == "__main__":
         host_visible_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
         host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
         host_ip = myutils.xlrd_cell_value_getstr(sheet, rindex, 3)
-        #  host_template = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
-        host_template = "Template XYZQ Get System Info"
+        host_template = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
         host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 5)
 
         if host_name == "":

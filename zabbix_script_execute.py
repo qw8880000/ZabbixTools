@@ -45,24 +45,20 @@ if __name__ == "__main__":
     zapi = ZabbixAPI(zabbix_server)
     zapi.login(zabbix_user, zabbix_password)
 
-    try:
-        scripts = zapi.script.get(filter={"name": zabbix_script})
-        if len(scripts) == 0:
-            logger.error("script [%s] does not exist.", zabbix_script)
-            sys.exit()
+    scripts = zapi.script.get(filter={"name": zabbix_script})
+    if len(scripts) == 0:
+        logger.error("script [%s] does not exist.", zabbix_script)
+        sys.exit()
 
-        scriptid = scripts[0]["scriptid"]
+    scriptid = scripts[0]["scriptid"]
 
-        for rindex in range(1, sheet.nrows):
-            host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
-            host_visible_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
-            host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
-            host_ip = myutils.xlrd_cell_value_getstr(sheet, rindex, 3)
+    for rindex in range(1, sheet.nrows):
+        host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
 
-            if host_name == "":
-                continue
+        if host_name == "":
+            continue
 
-            # 创建主机
+        try:
             hosts = zapi.host.get(filter={"host": host_name})
             if len(hosts) == 0:
                 logger.info("xxxx host [%s] does not exist.", host_name)
@@ -76,7 +72,7 @@ if __name__ == "__main__":
                 logger.info("===> host [%s],response=%s,value=%s", host_name, ret["response"], ret["value"])
 
 
-    except ZabbixAPIException as e:
-        logger.info("00000000 host [%s] some error", host_name)
-        logger.error(e)
+        except ZabbixAPIException as e:
+            logger.info("00000000 host [%s] some error", host_name)
+            logger.error(e)
 
