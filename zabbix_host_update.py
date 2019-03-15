@@ -10,6 +10,17 @@ import myutils
 
 logger = myutils.init_logger()
 
+def add_templateid_to_host(zapi, hostid, new_template_id):
+    templateids = []
+    templates_old = zapi.template.get(hostids=hostid)
+
+    for temp in templates_old:
+        templateids.append({ "templateid": temp["templateid"] })
+
+    templateids.append({ "templateid": new_template_id})
+    
+    return templateids
+
 if __name__ == "__main__":
     #
     # 参数解析
@@ -19,8 +30,9 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
     parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
     parser.add_argument("--update-interface", dest="update_interface", help="", action="store_true")
-    parser.add_argument("--update-template", dest="update_template", help="", action="store_true")
     parser.add_argument("--update-proxy", dest="update_proxy", help="", action="store_true")
+    parser.add_argument("--add-template", dest="add_template", help="")
+    parser.add_argument("--delete-template", dest="delete_template", help="")
     args = parser.parse_args()
 
     input_file = args.input
@@ -28,8 +40,9 @@ if __name__ == "__main__":
     zabbix_user = args.user
     zabbix_password = args.password
     update_interface = args.update_interface
-    update_template = args.update_template
     update_proxy = args.update_proxy
+    add_template = args.add_template
+    delete_template = args.delete_template
 
     if not os.path.exists(input_file):
         logger.warning("The input file does not exist: %s", input_file)
@@ -49,19 +62,42 @@ if __name__ == "__main__":
     zapi = ZabbixAPI(zabbix_server)
     zapi.login(zabbix_user, zabbix_password)
 
+    if add_template != None:
+        templates = zapi.template.get(filter={"host": add_template})
+        if len(templates) == 0:
+            logger.warning("Can't find template [%s] to add", add_template)
+            sys.exit(1)
+        else:
+            templateid_add = templates[0]["templateid"]
+            logger.info("the template [%s][%s] to add", add_template, templateid_add)
+    elif delete_template != None:
+        templates = zapi.template.get(filter={"host": delete_template})
+        if len(templates) == 0:
+            logger.warning("Can't find template [%s] to delete", delete_template)
+            sys.exit(1)
+        else:
+            templateid_delete = templates[0]["templateid"]
+            logger.info("the template [%s][%s] to delete", delete_template, templateid_delete)
+
     for rindex in range(1, sheet.nrows):
         host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
         host_visible_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
         host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
         host_ip = myutils.xlrd_cell_value_getstr(sheet, rindex, 3)
-        host_template = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
-        host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 5)
+        host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
 
         if host_name == "":
             continue
 
         try:
-            params = {}
+
+            hosts = zapi.host.get(filter={"host": host_name})
+            if len(hosts) == 0:
+                logger.info("====> host does not exist, host name: %s", host_name)
+                continue
+
+            hostid = hosts[0]["hostid"]
+            params = { "hostid": hostid }
 
             # proxy
             if update_proxy == True:
@@ -69,13 +105,15 @@ if __name__ == "__main__":
                 if len(proxys) != 0:
                     params["proxy_hostid"] = proxys[0]["proxyid"]
 
-            # template
-            if update_template == True:
-                templates = zapi.template.get(filter={ "host": host_template.split(",") })
-                if len(templates) > 0:
-                    params["templates"] = []
-                    for temp in templates:
-                        params["templates"].append({ "templateid": temp["templateid"] }),
+            # template add
+            if add_template != None:
+                templateids = add_templateid_to_host(zapi, hostid, templateid_add)
+                if len(templateids) > 0:
+                    params["templates"] = templateids
+
+            # template delete
+            if delete_template != None:
+                params["templates_clear"] = [{"templateid": templateid_delete}]
 
             # interface
             if update_interface == True:
@@ -88,17 +126,12 @@ if __name__ == "__main__":
                                 "port": "10050"
                                 }
 
-            hosts = zapi.host.get(filter={"host": host_name})
-            if len(hosts) == 0:
-                logger.info("====> host does not exist, host name: %s", host_name)
-            else:
-                hostid = hosts[0]["hostid"]
-                params["hostid"] = hostid
-                zapi.do_request(
-                        method="host.update",
-                        params=params
-                        )
-                logger.info("==> update success, host name: %s", host_name)
+            # update
+            zapi.do_request(
+                    method="host.update",
+                    params=params
+                    )
+            logger.info("==> update success, host name: %s", host_name)
 
         except ZabbixAPIException as e:
             logger.error("some error happened.[%s]", host_name)
