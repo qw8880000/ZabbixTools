@@ -44,6 +44,8 @@ if __name__ == "__main__":
     add_template = args.add_template
     delete_template = args.delete_template
 
+    print delete_template
+
     if not os.path.exists(input_file):
         logger.warning("The input file does not exist: %s", input_file)
         sys.exit(1)
@@ -63,10 +65,6 @@ if __name__ == "__main__":
     zapi.login(zabbix_user, zabbix_password)
 
     if add_template != None:
-        if add_template == "":
-            logger.warning("Template is empty.")
-            sys.exit(1)
-
         templates = zapi.template.get(filter={"host": add_template})
         if len(templates) == 0:
             logger.warning("Can't find template [%s] to add", add_template)
@@ -75,10 +73,6 @@ if __name__ == "__main__":
             templateid_add = templates[0]["templateid"]
             logger.info("the template [%s][%s] to add", add_template, templateid_add)
     elif delete_template != None:
-        if delete_template == "":
-            logger.warning("Template is empty.")
-            sys.exit(1)
-
         templates = zapi.template.get(filter={"host": delete_template})
         if len(templates) == 0:
             logger.warning("Can't find template [%s] to delete", delete_template)
