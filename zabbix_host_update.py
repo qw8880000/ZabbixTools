@@ -89,10 +89,12 @@ if __name__ == "__main__":
 
     for rindex in range(1, sheet.nrows):
         host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
-        host_visible_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
-        host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
+        host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
+        host_sofeware = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
         host_ip = myutils.xlrd_cell_value_getstr(sheet, rindex, 3)
-        host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
+        # host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
+
+        host_visible_name = u"{0}-{1}".format(host_system, host_ip)
 
         if host_name == "":
             continue
@@ -106,6 +108,9 @@ if __name__ == "__main__":
 
             hostid = hosts[0]["hostid"]
             params = { "hostid": hostid }
+
+            # name
+            params["name"] = host_visible_name
 
             # proxy
             if update_proxy == True:
