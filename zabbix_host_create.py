@@ -18,14 +18,12 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", dest="server", help="The zabbix server.", metavar="ZABBIX_SERVER", required=True)
     parser.add_argument("-u", "--user", dest="user", help="The zabbix user.", metavar="USER", required=True)
     parser.add_argument("-p", "--password", dest="password", help="The zabbix password.", metavar="PASSWORD", required=True)
-    parser.add_argument("--gname", dest="gname", help="The host group name.", metavar="HOST GROUP NAME", required=True)
     args = parser.parse_args()
 
     input_file = args.input
     zabbix_server = args.server
     zabbix_user = args.user
     zabbix_password = args.password
-    gname = args.gname
 
     if not os.path.exists(input_file):
         logger.warning("The input file does not exist: %s", input_file)
@@ -46,28 +44,27 @@ if __name__ == "__main__":
     zapi.login(zabbix_user, zabbix_password)
 
     try:
-        hostgroups = zapi.hostgroup.get(filter={"name": gname})
-        if len(hostgroups) == 0:
-            logger.warning("Can't find hostgroup %s.", gname)
-            sys.exit()
-
-        # proxys = zapi.proxy.get(filter={"host": "198.25.101.183"})
-        # if len(proxys) == 0:
-        #     logger.warning("Can't find proxy")
-        #     sys.exit()
-
-        gid = hostgroups[0]["groupid"]
-        proxyid = proxys[0]["proxyid"]
 
         for rindex in range(1, sheet.nrows):
             host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
-            host_visible_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
+            host_sofeware = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
             host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
             host_ip = myutils.xlrd_cell_value_getstr(sheet, rindex, 3)
+            host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
+            host_group = myutils.xlrd_cell_value_getstr(sheet, rindex, 5)
 
             if host_name == "":
                 continue
 
+            hostgroups = zapi.hostgroup.get(filter={"name": host_group})
+            if len(hostgroups) == 0:
+                logger.warning("Can't find hostgroup %s.", host_group)
+                continue
+
+            gid = hostgroups[0]["groupid"]
+
+            host_visible_name = u"{0}-{1}".format(host_sofeware, host_ip)
+            
             # 创建主机
             host_id = None
             hosts = zapi.host.get(filter={"host": host_name})

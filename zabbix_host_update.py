@@ -33,6 +33,9 @@ if __name__ == "__main__":
     parser.add_argument("--update-proxy", dest="update_proxy", help="", action="store_true")
     parser.add_argument("--add-template", dest="add_template", help="")
     parser.add_argument("--delete-template", dest="delete_template", help="")
+    parser.add_argument("--update-group", dest="update_group", help="", action="store_true")
+    parser.add_argument("--update-name", dest="update_name", help="", action="store_true")
+    parser.add_argument("--update-status", dest="update_status", help="", action="store_true")
     args = parser.parse_args()
 
     input_file = args.input
@@ -43,6 +46,9 @@ if __name__ == "__main__":
     update_proxy = args.update_proxy
     add_template = args.add_template
     delete_template = args.delete_template
+    update_group = args.update_group
+    update_name = args.update_name
+    update_status = args.update_status
 
     if not os.path.exists(input_file):
         logger.warning("The input file does not exist: %s", input_file)
@@ -89,12 +95,13 @@ if __name__ == "__main__":
 
     for rindex in range(1, sheet.nrows):
         host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
-        host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
-        host_sofeware = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
+        host_sofeware = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
+        host_system = myutils.xlrd_cell_value_getstr(sheet, rindex, 2)
         host_ip = myutils.xlrd_cell_value_getstr(sheet, rindex, 3)
-        # host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
+        host_proxy = myutils.xlrd_cell_value_getstr(sheet, rindex, 4)
+        host_group = myutils.xlrd_cell_value_getstr(sheet, rindex, 5)
 
-        host_visible_name = u"{0}-{1}".format(host_system, host_ip)
+        host_visible_name = u"{0}-{1}".format(host_sofeware , host_ip)
 
         if host_name == "":
             continue
@@ -110,7 +117,17 @@ if __name__ == "__main__":
             params = { "hostid": hostid }
 
             # name
-            params["name"] = host_visible_name
+            if update_name == True:
+                params["name"] = host_visible_name
+
+            # host group
+            if update_group == True:
+                hostgroups = zapi.hostgroup.get(filter={"name": host_group})
+                if len(hostgroups) == 0:
+                    logger.warning("Can't find hostgroup %s.", host_group)
+                else:
+                    gid = hostgroups[0]["groupid"]
+                    params["groups"] = [{"groupid": gid}]
 
             # proxy
             if update_proxy == True:
@@ -127,6 +144,10 @@ if __name__ == "__main__":
             # template delete
             if delete_template != None:
                 params["templates_clear"] = [{"templateid": templateid_delete}]
+
+            # status
+            if update_status == True:
+                params["status"] = 0
 
             # interface
             if update_interface == True:
