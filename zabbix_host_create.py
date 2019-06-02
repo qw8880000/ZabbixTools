@@ -44,7 +44,6 @@ if __name__ == "__main__":
     zapi.login(zabbix_user, zabbix_password)
 
     try:
-
         for rindex in range(1, sheet.nrows):
             host_name = myutils.xlrd_cell_value_getstr(sheet, rindex, 0)
             host_sofeware = myutils.xlrd_cell_value_getstr(sheet, rindex, 1)
