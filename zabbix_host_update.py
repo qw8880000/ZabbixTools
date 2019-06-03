@@ -21,6 +21,16 @@ def add_templateid_to_host(zapi, hostid, new_template_id):
     
     return templateids
 
+def add_groupid_to_host(host, new_group_id):
+    groupids = []
+
+    for g in host["groups"]:
+        groupids.append({"groupid": g["groupid"]})
+
+    groupids.append({"groupid": new_group_id})
+    
+    return groupids
+
 if __name__ == "__main__":
     #
     # 参数解析
@@ -108,12 +118,13 @@ if __name__ == "__main__":
 
         try:
 
-            hosts = zapi.host.get(filter={"host": host_name})
+            hosts = zapi.host.get(filter={"host": host_name}, selectGroups="extend")
             if len(hosts) == 0:
                 logger.info("====> host does not exist, host name: %s", host_name)
                 continue
 
-            hostid = hosts[0]["hostid"]
+            current_host = hosts[0]
+            hostid = current_host["hostid"]
             params = { "hostid": hostid }
 
             # name
@@ -127,7 +138,7 @@ if __name__ == "__main__":
                     logger.warning("Can't find hostgroup %s.", host_group)
                 else:
                     gid = hostgroups[0]["groupid"]
-                    params["groups"] = [{"groupid": gid}]
+                    params["groups"] = add_groupid_to_host(current_host, gid)
 
             # proxy
             if update_proxy == True:
